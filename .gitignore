@@ -1,0 +1,14 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Env (never commit your API key here)
+.env
+*.env
+
+# Logs
+*.log

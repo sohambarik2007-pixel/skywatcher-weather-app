@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Skywatcher — Real-time weather with a live dynamic sky. See the sun, moon, stars, rain and more react to actual weather conditions." />
+  <title>Skywatcher — Live Weather</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       DYNAMIC SKY LAYER
+  ═══════════════════════════════════════════ -->
+  <div id="sky">
+
+    <!-- Stars (populated by JS) -->
+    <div id="starsEl"></div>
+
+    <!-- Aurora (clear cold nights) -->
+    <div id="auroraEl" class="aurora-wrap hidden">
+      <div class="ab a1"></div>
+      <div class="ab a2"></div>
+      <div class="ab a3"></div>
+    </div>
+
+    <!-- Moon -->
+    <div id="moonEl" class="hidden">
+      <div class="moon-glow"></div>
+      <div class="moon-body">
+        <div class="crater" style="width:14px;height:14px;top:22%;left:20%"></div>
+        <div class="crater" style="width:9px;height:9px;top:55%;left:62%"></div>
+        <div class="crater" style="width:7px;height:7px;top:38%;left:52%"></div>
+        <div class="crater" style="width:5px;height:5px;top:68%;left:30%"></div>
+      </div>
+    </div>
+
+    <!-- Sun -->
+    <div id="sunEl" class="hidden">
+      <div class="sun-haze"></div>
+      <div class="sun-rays"></div>
+      <div class="sun-core"></div>
+    </div>
+
+    <!-- Drifting clouds (populated by JS) -->
+    <div id="cloudsEl"></div>
+
+    <!-- High-quality particle canvas (rain, snow, fireflies, shooting stars) -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Legacy CSS precipitation slot (kept for fog glyphs) -->
+    <div id="precipEl"></div>
+
+    <!-- Lightning flash overlay -->
+    <div id="lightningEl" class="hidden"></div>
+
+    <!-- Fog / mist overlay -->
+    <div id="fogEl" class="hidden"></div>
+
+    <!-- City skyline silhouette -->
+    <div id="skylineEl"></div>
+
+  </div><!-- /#sky -->
+
+
+  <!-- ═══════════════════════════════════════════
+       APP CONTENT
+  ═══════════════════════════════════════════ -->
+  <div class="app-wrapper">
+
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-icon">🌤</span>
+        <span class="brand-name">Skywatcher</span>
+      </div>
+
+      <form class="search-form" id="searchForm" role="search">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            id="searchInput"
+            class="search-input"
+            placeholder="Search any city..."
+            autocomplete="off"
+            aria-label="Search for a city"
+            aria-autocomplete="list"
+            aria-controls="suggestionsDropdown"
+          />
+          <button type="submit" id="searchBtn" class="search-btn">Search</button>
+        </div>
+        <!-- Autocomplete suggestions -->
+        <div id="suggestionsDropdown" class="suggestions-dropdown hidden" role="listbox"></div>
+      </form>
+
+      <div class="header-actions">
+        <button id="shareBtn" class="icon-btn" title="Share weather" aria-label="Share weather">📤</button>
+        <button id="geoBtn"   class="icon-btn geo-btn" title="Use my location" aria-label="Use my current location">📍</button>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+      <!-- ERROR BANNER -->
+      <div id="errorBanner" class="error-banner hidden" role="alert">
+        <span id="errorMsg">City not found.</span>
+        <button id="errorClose" class="error-close" aria-label="Close error">✕</button>
+      </div>
+
+      <!-- CURRENT WEATHER CARD -->
+      <section class="current-card glass" id="currentCard" aria-label="Current weather">
+        <div class="current-left">
+          <div class="city-row">
+            <span class="live-dot" id="liveDot" title="Live data"></span>
+            <h1 class="city-name" id="cityName">
+              <span class="skeleton skeleton-text" style="width:180px;height:36px"></span>
+            </h1>
+            <span class="country-badge" id="countryBadge"></span>
+          </div>
+          <p class="weather-date" id="weatherDate"></p>
+          <p class="weather-desc" id="weatherDesc">
+            <span class="skeleton skeleton-text" style="width:120px;height:18px"></span>
+          </p>
+
+          <div class="temp-row">
+            <span class="temp-main" id="tempMain">
+              <span class="skeleton skeleton-text" style="width:120px;height:80px"></span>
+            </span>
+            <span class="temp-trend" id="tempTrend"></span>
+            <div class="unit-toggle">
+              <button id="btnC" class="unit-btn active" aria-label="Celsius">°C</button>
+              <button id="btnF" class="unit-btn" aria-label="Fahrenheit">°F</button>
+            </div>
+          </div>
+
+          <div class="feels-like" id="feelsLike"></div>
+        </div>
+
+        <div class="current-right">
+          <div class="weather-icon-large" id="weatherIconLarge">
+            <span class="skeleton skeleton-circle"></span>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-item" id="statHumidity">
+              <span class="stat-icon">💧</span>
+              <span class="stat-val skeleton skeleton-text" style="width:50px;height:16px"></span>
+              <span class="stat-label">Humidity</span>
+            </div>
+            <div class="stat-item" id="statWind">
+              <span class="stat-icon">💨</span>
+              <span class="stat-val skeleton skeleton-text" style="width:50px;height:16px"></span>
+              <span class="stat-label">Wind</span>
+            </div>
+            <div class="stat-item" id="statVisibility">
+              <span class="stat-icon">👁️</span>
+              <span class="stat-val skeleton skeleton-text" style="width:50px;height:16px"></span>
+              <span class="stat-label">Visibility</span>
+            </div>
+            <div class="stat-item" id="statPressure">
+              <span class="stat-icon">🌡️</span>
+              <span class="stat-val skeleton skeleton-text" style="width:50px;height:16px"></span>
+              <span class="stat-label">Pressure</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- HOURLY CHART -->
+      <section class="hourly-section glass" id="hourlySection" aria-label="Hourly forecast">
+        <h2 class="section-title">⏱ Hourly Forecast</h2>
+        <div class="hourly-chart-wrap">
+          <div class="hourly-chart" id="hourlyChart"></div>
+        </div>
+      </section>
+
+      <!-- TODAY'S HIGHLIGHTS -->
+      <section class="highlights-section" id="highlightsSection" aria-label="Today's weather highlights">
+        <h2 class="section-title">🔆 Today's Highlights</h2>
+        <div class="highlights-grid" id="highlightsGrid">
+          <div class="highlight-card glass skeleton-card" style="min-height:120px;"></div>
+          <div class="highlight-card glass skeleton-card" style="min-height:120px;"></div>
+          <div class="highlight-card glass skeleton-card" style="min-height:120px;"></div>
+          <div class="highlight-card glass skeleton-card" style="min-height:120px;"></div>
+          <div class="highlight-card glass skeleton-card" style="min-height:120px;"></div>
+          <div class="highlight-card glass skeleton-card" style="min-height:120px;"></div>
+        </div>
+      </section>
+
+      <!-- 5-DAY FORECAST -->
+      <section class="forecast-section" aria-label="5-day forecast">
+        <h2 class="section-title">📅 5-Day Forecast</h2>
+        <div class="forecast-grid" id="forecastGrid">
+          <div class="forecast-card glass skeleton-card"></div>
+          <div class="forecast-card glass skeleton-card"></div>
+          <div class="forecast-card glass skeleton-card"></div>
+          <div class="forecast-card glass skeleton-card"></div>
+          <div class="forecast-card glass skeleton-card"></div>
+        </div>
+      </section>
+
+      <!-- RECENT SEARCHES -->
+      <section class="recent-section" id="recentSection" style="display:none" aria-label="Recent searches">
+        <h2 class="section-title">🕓 Recent Searches</h2>
+        <div class="recent-chips" id="recentChips"></div>
+      </section>
+
+    </main>
+
+    <footer class="app-footer">
+      <p>Powered by <a href="https://openweathermap.org" target="_blank" rel="noopener">OpenWeatherMap</a> · Built with ❤️</p>
+    </footer>
+
+  </div><!-- /.app-wrapper -->
+
+  <script src="app.js"></script>
+</body>
+</html>
